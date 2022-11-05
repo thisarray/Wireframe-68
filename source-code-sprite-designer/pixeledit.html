@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pixeledit</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+output {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-gap: 0.5em;
+  gap: 0.5em;
+  margin: 1em 0;
+}
+output img {
+  border: 1px solid black;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/palette.png" alt="palette" data-name="palette">
+  <img class="hidden" src="images/savebutton.png" alt="savebutton" data-name="savebutton">
+  <img class="hidden" src="images/savebuttonhigh.png" alt="savebuttonhigh" data-name="savebuttonhigh">
+  <img class="hidden" src="images/tool1.png" alt="tool1" data-name="tool1">
+  <img class="hidden" src="images/tool1high.png" alt="tool1high" data-name="tool1high">
+  <img class="hidden" src="images/tool2.png" alt="tool2" data-name="tool2">
+  <img class="hidden" src="images/tool2high.png" alt="tool2high" data-name="tool2high">
+  <img class="hidden" src="images/tool3.png" alt="tool3" data-name="tool3">
+  <img class="hidden" src="images/tool3high.png" alt="tool3high" data-name="tool3high">
+</section>
+
+<main>
+<h1>pixeledit</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<canvas class="hidden" id="buffer"></canvas>
+
+<output></output>
+
+<h2>Attribution</h2>
+
+<p><a href="https://wireframe.raspberrypi.com/issues/68">Make your own pixel editing program, pages 52-55, by Mark Vanstone</a>.</p>
+
+<p>Licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported</a>.</p>
+
+<p><a href="https://www.raspberrypi.com/news/make-your-own-pixel-editing-program-wireframe-68/">Blog post of Source Code</a>.</p>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+# Pixel Edit
+import pgzrun, pygame
+
+mysprite = pygame.Surface([100,100])
+transColour = pygame.Color(255, 0, 255)
+mysprite.set_colorkey(transColour)
+mysprite.fill(transColour)
+mygrid = pygame.Surface([600,600])
+mygrid.set_colorkey(transColour)
+mygrid.fill(transColour)
+for x in range(0,100):
+    pygame.draw.line(mygrid,pygame.Color(100, 100, 100),(x*6,0), (x*6,600))
+for y in range(0,100):
+    pygame.draw.line(mygrid,pygame.Color(100, 100, 100),(0,y*6), (600,y*6))
+
+curMouseX = 0
+curMouseY = 0
+drawing = False
+saving = False
+eraseOn = False
+curColour = pygame.Color(255, 0, 0)
+curTool = 2
+
+def draw():
+    screen.fill((150,150,150))
+    screen.draw.filled_rect(Rect((600, 0), (800, 600)), (200, 200, 200))
+    screen.draw.text(&quot;PIXELEDIT&quot;, center = (700, 30), owidth=1, ocolor=(255,255,255), color=(0,0,255) , fontsize=40)
+    mylargesprite = pygame.transform.scale(mysprite, (600, 600))
+    mylargesprite.set_colorkey(transColour)
+    screen.blit(mylargesprite,(0,0))
+    screen.blit(mysprite,(650,400))
+    screen.blit(mygrid,(0,0))
+    screen.blit(&quot;palette&quot;,(620,50))
+    if saving == True:
+        screen.blit(&quot;savebuttonhigh&quot;,(625,520))
+    else:
+        screen.blit(&quot;savebutton&quot;,(625,520))
+    if curTool == 1:
+        screen.blit(&quot;tool1high&quot;,(625,325))
+    else:
+        screen.blit(&quot;tool1&quot;,(625,325))
+    if curTool == 2:
+        screen.blit(&quot;tool2high&quot;,(675,325))
+    else:
+        screen.blit(&quot;tool2&quot;,(675,325))
+    if eraseOn:
+        screen.blit(&quot;tool3high&quot;,(725,325))
+    else:
+        screen.blit(&quot;tool3&quot;,(725,325))
+    screen.draw.rect(Rect((650, 400), (100, 100)), (0,0,0))
+    if(curMouseX &lt; 600):
+        if curTool == 1:
+            if eraseOn:
+                screen.draw.filled_rect(Rect((curMouseX, curMouseY), (6, 6)), pygame.Color(255, 255, 255))
+            else:
+                screen.draw.filled_rect(Rect((curMouseX, curMouseY), (6, 6)), curColour)
+        if curTool == 2:
+            if eraseOn:
+                screen.draw.filled_circle((curMouseX, curMouseY), 24, pygame.Color(255, 255, 255))
+            else:
+                screen.draw.filled_circle((curMouseX, curMouseY), 24, curColour)
+
+def on_mouse_move(pos):
+    global curMouseX, curMouseY
+    curMouseX = int(pos[0]/6)*6
+    curMouseY = int(pos[1]/6)*6
+    if drawing == True:
+        spriteX = int(pos[0]/6)
+        spriteY = int(pos[1]/6)
+        if curTool == 1:
+            if eraseOn:
+                mysprite.set_at((spriteX,spriteY),transColour)
+            else:
+                mysprite.set_at((spriteX,spriteY),curColour)
+        if curTool == 2:
+            if eraseOn:
+                pygame.draw.circle(mysprite, transColour, (spriteX, spriteY), 4, width=0)
+            else:
+                pygame.draw.circle(mysprite, curColour, (spriteX, spriteY), 4, width=0)
+
+def on_mouse_down(pos):
+    global drawing,curColour,curTool,saving,eraseOn
+    if pos[0] &lt; 600:
+        drawing = True
+        spriteX = int(pos[0]/6)
+        spriteY = int(pos[1]/6)
+        if curTool == 1:
+            if eraseOn:
+                mysprite.set_at((spriteX,spriteY),transColour)
+            else:
+                mysprite.set_at((spriteX,spriteY),curColour)
+        if curTool == 2:
+            if eraseOn:
+                pygame.draw.circle(mysprite, transColour, (spriteX, spriteY), 4, width=0)
+            else:
+                pygame.draw.circle(mysprite, curColour, (spriteX, spriteY), 4, width=0)
+    else:
+        if pos[0] &gt; 625 and pos[0] &lt; 775 and pos[1] &gt; 520 and pos[1] &lt; 585:
+            saving = True
+            saveImage()
+        if pos[0] &gt; 620 and pos[0] &lt; 770 and pos[1] &gt; 50 and pos[1] &lt; 300:
+            curColour = screen.surface.get_at(pos)
+        if pos[0] &gt; 625 and pos[0] &lt; 675 and pos[1] &gt; 325 and pos[1] &lt; 375:
+            curTool = 1
+        if pos[0] &gt; 675 and pos[0] &lt; 725 and pos[1] &gt; 325 and pos[1] &lt; 375:
+            curTool = 2
+        if pos[0] &gt; 725 and pos[0] &lt; 775 and pos[1] &gt; 325 and pos[1] &lt; 375:
+            eraseOn = not eraseOn
+
+def on_mouse_up(pos):
+    global drawing,saving
+    drawing = False
+    saving = False
+
+def saveImage():
+    mysavingsprite = mysprite.convert_alpha()
+    pygame.image.save(mysavingsprite,&quot;mysprite.png&quot;)
+
+pgzrun.go()
+</code></pre>
+</main>
+
+<script>
+// Pixel Edit
+
+const TRANSPARENT_COLOUR = [0, 0, 0, 0];
+const CIRCLE_LIST = [[0, -3], [-1, -2], [0, -2], [1, -2], [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1],
+                     [-3, 0], [-2, 0], [-1, 0], [0, 0], [1, 0], [2, 0], [3, 0],
+                     [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], [-1, 2], [0, 2], [1, 2], [0, 3]];
+
+var mysprite, curMouseX, curMouseY, drawing, saving, eraseOn, curColour, curTool;
+
+function reset() {
+  screen.clear(TRANSPARENT_COLOUR);
+  mysprite = screen.getSurface(100, 100);
+
+  curMouseX = 0;
+  curMouseY = 0;
+  drawing = false;
+  saving = false;
+  eraseOn = false;
+  curColour = [255, 0, 0];
+  curTool = 2;
+}
+
+function draw() {
+  screen.fill([150, 150, 150]);
+  screen.draw.filled_rect(new Rect([600, 0], [800, 600]), [200, 200, 200]);
+  screen.draw.text("PIXELEDIT", {
+    center: [700, 30],
+    owidth: 1,
+    ocolor: [255, 255, 255],
+    color: [0, 0, 255],
+    fontsize: 40
+  });
+
+  // Convert the sprite image to a bitmap image that can be scaled
+  createImageBitmap(mysprite.imageData).then(function (result) {
+    images['mylargesprite'] = result;
+    return result;
+  });
+  if ('mylargesprite' in images) {
+    screen.blit('mylargesprite', new Rect(0, 0, 600, 600));
+  }
+
+  screen.draw.filled_rect(new Rect([650, 400], [100, 100]), TRANSPARENT_COLOUR);
+  screen.blit(mysprite, [650, 400]);
+  // Manually draw the grid; otherwise, the surface would cover up the sprite
+  for (let x = 0; x < 100; x++) {
+    screen.draw.line([x * 6, 0], [x * 6, 600], [100, 100, 100]);
+  }
+  for (let y = 0; y < 100; y++) {
+    screen.draw.line([0, y * 6], [600, y * 6], [100, 100, 100]);
+  }
+  screen.blit("palette", [620, 50]);
+  if (saving) {
+    screen.blit("savebuttonhigh", [625, 520]);
+  }
+  else {
+    screen.blit("savebutton", [625, 520]);
+  }
+  if (curTool === 1) {
+    screen.blit("tool1high", [625, 325]);
+  }
+  else {
+    screen.blit("tool1", [625, 325]);
+  }
+  if (curTool === 2) {
+    screen.blit("tool2high", [675, 325]);
+  }
+  else {
+    screen.blit("tool2", [675, 325]);
+  }
+  if (eraseOn) {
+    screen.blit("tool3high", [725, 325]);
+  }
+  else {
+    screen.blit("tool3", [725, 325]);
+  }
+  screen.draw.rect(new Rect([650, 400], [100, 100]), [0, 0, 0]);
+  if (curMouseX < 600) {
+    if (curTool === 1) {
+      if (eraseOn) {
+        screen.draw.filled_rect(new Rect([curMouseX, curMouseY], [6, 6]), [255, 255, 255]);
+      }
+      else {
+        screen.draw.filled_rect(new Rect([curMouseX, curMouseY], [6, 6]), curColour);
+      }
+    }
+    if (curTool === 2) {
+      if (eraseOn) {
+        screen.draw.filled_circle([curMouseX, curMouseY], 24, [255, 255, 255]);
+      }
+      else {
+        screen.draw.filled_circle([curMouseX, curMouseY], 24, curColour);
+      }
+    }
+  }
+}
+
+function on_mouse_move(pos) {
+  curMouseX = Math.trunc(pos[0] / 6) * 6;
+  curMouseY = Math.trunc(pos[1] / 6) * 6;
+  if (drawing) {
+    let spriteX = Math.trunc(pos[0] / 6),
+        spriteY = Math.trunc(pos[1] / 6),
+        colour;
+    if (curTool === 1) {
+      if (eraseOn) {
+        mysprite.setAt(spriteX, spriteY, TRANSPARENT_COLOUR);
+      }
+      else {
+        mysprite.setAt(spriteX, spriteY, curColour);
+      }
+    }
+    if (curTool === 2) {
+      if (eraseOn) {
+        colour = TRANSPARENT_COLOUR;
+      }
+      else {
+        colour = curColour;
+      }
+      for (let [dx, dy] of CIRCLE_LIST) {
+        mysprite.setAt(spriteX + dx, spriteY + dy, colour);
+      }
+    }
+  }
+}
+
+function on_mouse_down(pos) {
+  if (pos[0] < 600) {
+    drawing = true;
+    let spriteX = Math.trunc(pos[0] / 6),
+        spriteY = Math.trunc(pos[1] / 6),
+        colour;
+    if (curTool === 1) {
+      if (eraseOn) {
+        mysprite.setAt(spriteX, spriteY, TRANSPARENT_COLOUR);
+      }
+      else {
+        mysprite.setAt(spriteX, spriteY, curColour);
+      }
+    }
+    if (curTool === 2) {
+      if (eraseOn) {
+        colour = TRANSPARENT_COLOUR;
+      }
+      else {
+        colour = curColour;
+      }
+      for (let [dx, dy] of CIRCLE_LIST) {
+        mysprite.setAt(spriteX + dx, spriteY + dy, colour);
+      }
+    }
+  }
+  else {
+    if ((pos[0] > 625) && (pos[0] < 775) && (pos[1] > 520) && (pos[1] < 585)) {
+      saving = true;
+      saveImage();
+    }
+    if ((pos[0] > 620) && (pos[0] < 770) && (pos[1] > 50) && (pos[1] < 300)) {
+      curColour = screen.getSurface().getAt(pos[0], pos[1]);
+    }
+    if ((pos[0] > 625) && (pos[0] < 675) && (pos[1] > 325) && (pos[1] < 375)) {
+      curTool = 1;
+    }
+    if ((pos[0] > 675) && (pos[0] < 725) && (pos[1] > 325) && (pos[1] < 375)) {
+      curTool = 2;
+    }
+    if ((pos[0] > 725) && (pos[0] < 775) && (pos[1] > 325) && (pos[1] < 375)) {
+      eraseOn = !eraseOn;
+    }
+  }
+}
+
+function on_mouse_up(pos) {
+  drawing = false;
+  saving = false;
+}
+
+function saveImage() {
+  let buffer = document.querySelector('#buffer'),
+      output = document.querySelector('output'),
+      context, image;
+
+  if (buffer == null) {
+    return;
+  }
+  if (output == null) {
+    return;
+  }
+
+  buffer.width = mysprite.width;
+  buffer.height = mysprite.height;
+  context = buffer.getContext('2d');
+  context.putImageData(mysprite.imageData, 0, 0);
+  image = document.createElement('img');
+  image.src = buffer.toDataURL();
+  output.appendChild(image);
+}
+
+window.addEventListener('load', (event) => {
+  screen.init();
+});
+</script>
+</body>
+
+</html>
